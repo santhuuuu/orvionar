@@ -1,5 +1,7 @@
 {
-  "name": "ORVIONAR",
+  "name": "ORVIONAR | Elite Tech Academy",
   "description": "The ultimate AI-powered ecosystem for mastering MERN, Data Science, Gen-AI, Cloud Computing, and beyond. Empowering the next generation of tech leaders.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

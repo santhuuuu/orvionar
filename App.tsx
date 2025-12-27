@@ -10,13 +10,29 @@ import { COURSES } from './constants';
 import { generateQuiz } from './services/geminiService';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'home' | 'courses' | 'learning'>('home');
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [view, setView] = useState<'home' | 'courses' | 'learning'>(() => {
+    return (localStorage.getItem('orvionar_view') as any) || 'home';
+  });
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(() => {
+    const saved = localStorage.getItem('orvionar_course');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [activeLesson, setActiveLesson] = useState<Lesson | null>(() => {
+    const saved = localStorage.getItem('orvionar_lesson');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [isQuizMode, setIsQuizMode] = useState(false);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [isMobileAIDrawerOpen, setIsMobileAIDrawerOpen] = useState(false);
+
+  // Persistence Effects
+  useEffect(() => {
+    localStorage.setItem('orvionar_view', view);
+    if (selectedCourse) localStorage.setItem('orvionar_course', JSON.stringify(selectedCourse));
+    if (activeLesson) localStorage.setItem('orvionar_lesson', JSON.stringify(activeLesson));
+  }, [view, selectedCourse, activeLesson]);
 
   const categories = useMemo(() => {
     return ['All', ...new Set(COURSES.map(c => c.category))];
@@ -38,6 +54,9 @@ const App: React.FC = () => {
   const handleLessonChange = (lesson: Lesson) => {
     setActiveLesson(lesson);
     setIsQuizMode(false);
+    if (window.innerWidth < 1024) {
+      // Close sidebar or scroll on mobile if needed
+    }
   };
 
   const startQuiz = async () => {
@@ -59,7 +78,11 @@ const App: React.FC = () => {
       <Header 
         onNavigate={(v) => {
           setView(v);
-          if (v === 'home') setSelectedCourse(null);
+          if (v === 'home') {
+            setSelectedCourse(null);
+            localStorage.removeItem('orvionar_course');
+            localStorage.removeItem('orvionar_lesson');
+          }
         }} 
         activeView={view} 
       />
@@ -67,7 +90,6 @@ const App: React.FC = () => {
       <main className="flex-1">
         {view === 'home' && (
           <div className="relative overflow-hidden">
-            {/* Background elements */}
             <div className="hero-glow top-[-200px] right-[-200px] opacity-40"></div>
             <div className="hero-glow bottom-[-300px] left-[-200px] opacity-20" style={{background: 'radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%)'}}></div>
 
@@ -127,29 +149,13 @@ const App: React.FC = () => {
                         alt="Hero" 
                         className="rounded-[3rem] w-full object-cover aspect-[4/5] brightness-90 grayscale-[0.2] hover:grayscale-0 transition-all duration-700"
                       />
-                      <div className="absolute inset-x-8 bottom-8 glass-dark p-6 rounded-[2.5rem] text-white">
-                        <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center">
-                              <i className="fas fa-play"></i>
-                           </div>
-                           <div>
-                             <div className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Live Feedback</div>
-                             <div className="text-sm font-bold">Neural Net Basics</div>
-                           </div>
-                           <div className="ml-auto flex -space-x-3">
-                              {[1,2,3].map(i => <div key={i} className="w-8 h-8 rounded-full border-2 border-indigo-900 bg-slate-700 flex items-center justify-center text-[10px] font-bold">U{i}</div>)}
-                           </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
-                  {/* Glowing background elements */}
                   <div className="absolute -top-12 -left-12 w-64 h-64 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
                   <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
                 </div>
               </div>
 
-              {/* Course Highlights with Premium Cards */}
               <section className="mt-40">
                 <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
                   <div className="space-y-4">
@@ -171,57 +177,8 @@ const App: React.FC = () => {
                   ))}
                 </div>
               </section>
-
-              {/* Features section */}
-              <section className="mt-48 grid lg:grid-cols-2 gap-24 items-center">
-                <div className="order-2 lg:order-1 relative">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-6 pt-12">
-                      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-50 transform hover:-rotate-3 transition-transform">
-                        <i className="fas fa-microchip text-3xl text-indigo-600 mb-6"></i>
-                        <h4 className="text-xl font-black mb-2">AI Tutoring</h4>
-                        <p className="text-slate-500 text-sm font-medium">Real-time code review and conceptual guidance.</p>
-                      </div>
-                      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-50 transform hover:rotate-3 transition-transform">
-                        <i className="fas fa-layer-group text-3xl text-purple-600 mb-6"></i>
-                        <h4 className="text-xl font-black mb-2">Pro Tracks</h4>
-                        <p className="text-slate-500 text-sm font-medium">From MERN stack to Neural Networks.</p>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-50 transform hover:rotate-2 transition-transform">
-                        <i className="fas fa-certificate text-3xl text-yellow-500 mb-6"></i>
-                        <h4 className="text-xl font-black mb-2">Elite Certs</h4>
-                        <p className="text-slate-500 text-sm font-medium">Industry-recognized credentials for elite roles.</p>
-                      </div>
-                      <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-slate-50 transform hover:-rotate-2 transition-transform">
-                        <i className="fas fa-terminal text-3xl text-slate-900 mb-6"></i>
-                        <h4 className="text-xl font-black mb-2">Lab Access</h4>
-                        <p className="text-slate-500 text-sm font-medium">Cloud sandboxes for every course module.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="order-1 lg:order-2 space-y-8">
-                  <h3 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">Beyond Video <br/>Lectures.</h3>
-                  <p className="text-lg text-slate-500 font-medium leading-relaxed">
-                    Most platforms just stream video. Orvionar interacts with your code in real-time. Our Gemini-powered engine understands your logic and helps you refactor for performance, security, and scalability.
-                  </p>
-                  <ul className="space-y-4">
-                    {['Automated Skill Assessments', 'Live Lab Sandboxes', 'Personalized Learning Curves', 'Global Peer Network'].map((item, i) => (
-                      <li key={i} className="flex items-center gap-4 font-black text-slate-800 uppercase tracking-widest text-xs">
-                        <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-                           <i className="fas fa-check text-[10px]"></i>
-                        </div>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </section>
             </div>
             
-            {/* Footer with branding */}
             <footer className="bg-slate-950 py-24 mt-24 text-white">
               <div className="max-w-7xl mx-auto px-4 text-center">
                  <div className="text-4xl font-black tracking-tighter mb-8">ORVION<span className="text-indigo-500">AR</span></div>
@@ -268,7 +225,7 @@ const App: React.FC = () => {
 
         {view === 'learning' && selectedCourse && activeLesson && (
           <div className="flex h-[calc(100vh-80px)] overflow-hidden bg-white animate-in fade-in duration-500">
-            {/* Minimal Sidebar */}
+            {/* Sidebar */}
             <div className="w-85 bg-slate-50 border-r border-slate-200 flex flex-col hidden lg:flex">
               <div className="p-10 border-b border-slate-200 bg-white">
                 <div className="flex items-center justify-between mb-6">
@@ -347,14 +304,14 @@ const App: React.FC = () => {
                       {isGeneratingQuiz ? (
                         <>
                           <i className="fas fa-cog animate-spin"></i>
-                          <span className="uppercase tracking-widest text-xs">Generating Challenge...</span>
+                          <span className="uppercase tracking-widest text-xs ml-2">Generating...</span>
                         </>
                       ) : (
                         <>
                           <div className="bg-white/20 w-10 h-10 rounded-2xl flex items-center justify-center group-hover:rotate-12 transition-transform">
                              <i className="fas fa-bolt"></i>
                           </div>
-                          <span className="uppercase tracking-widest text-xs">Certify Module Skills</span>
+                          <span className="uppercase tracking-widest text-xs">Certify Module</span>
                         </>
                       )}
                     </button>
@@ -365,12 +322,6 @@ const App: React.FC = () => {
                       <div className="absolute -top-10 -right-10 text-white/5 text-9xl">
                          <i className="fas fa-terminal"></i>
                       </div>
-                      <div className="flex items-center gap-3 mb-6">
-                         <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center text-xs">
-                           <i className="fas fa-quote-left"></i>
-                         </div>
-                         <span className="text-xs font-black uppercase tracking-widest text-indigo-300">Module Introduction</span>
-                      </div>
                       <p className="text-2xl font-bold leading-relaxed relative z-10 italic">
                         "{activeLesson.content}"
                       </p>
@@ -378,10 +329,10 @@ const App: React.FC = () => {
                     
                     <div className="grid md:grid-cols-2 gap-10 not-prose">
                       {[
-                        { icon: 'fa-microchip', title: 'System Architecture', desc: 'Understanding the low-level orchestration of high-performance tools.' },
-                        { icon: 'fa-shield-halved', title: 'Security Hardening', desc: 'Applying OWASP standards and advanced cryptography from day one.' },
-                        { icon: 'fa-infinity', title: 'Scale & Latency', desc: 'Architecting for zero-downtime and millisecond-precision execution.' },
-                        { icon: 'fa-rocket', title: 'Industry Velocity', desc: 'Accelerating development workflows with advanced AI integrations.' }
+                        { icon: 'fa-microchip', title: 'Architecture', desc: 'Understanding the low-level orchestration.' },
+                        { icon: 'fa-shield-halved', title: 'Hardening', desc: 'Applying OWASP standards and advanced crypto.' },
+                        { icon: 'fa-infinity', title: 'Scaling', desc: 'Architecting for zero-downtime execution.' },
+                        { icon: 'fa-rocket', title: 'Velocity', desc: 'Accelerating dev workflows with AI.' }
                       ].map((m, i) => (
                         <div key={i} className="group bg-slate-50 border border-slate-100 p-10 rounded-[3rem] hover:bg-white hover:shadow-2xl transition-all duration-500">
                            <div className="w-16 h-16 bg-white rounded-[1.5rem] flex items-center justify-center text-indigo-600 text-2xl shadow-sm mb-8 group-hover:scale-110 transition-transform">
@@ -399,25 +350,47 @@ const App: React.FC = () => {
                    <div className="w-full max-w-4xl">
                      <Quiz 
                        questions={quizQuestions} 
-                       onComplete={() => setView('home')} 
+                       onComplete={() => setIsQuizMode(false)} 
                      />
                    </div>
                 </div>
               )}
             </div>
 
-            {/* AI Assistant Sidebar with Shadow Polish */}
+            {/* AI Assistant Desktop Sidebar */}
             <div className="w-96 hidden xl:block z-20 shadow-[-30px_0_60px_-15px_rgba(0,0,0,0.05)]">
               <AITutor lessonTitle={activeLesson.title} />
             </div>
+
+            {/* Mobile AI Drawer Overlay */}
+            {isMobileAIDrawerOpen && (
+              <div className="xl:hidden fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+                <div className="absolute inset-y-0 right-0 w-full max-w-md bg-white shadow-2xl animate-in slide-in-from-right duration-500 flex flex-col">
+                  <div className="flex items-center justify-between p-6 border-b">
+                    <h3 className="font-black text-slate-900 tracking-tight">AI Mentor Drawer</h3>
+                    <button onClick={() => setIsMobileAIDrawerOpen(false)} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div className="flex-1">
+                    <AITutor lessonTitle={activeLesson.title} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
 
-      {/* Floating AI for Mobile with Pulse */}
-      <button className="xl:hidden fixed bottom-10 right-10 w-20 h-20 bg-indigo-600 text-white rounded-full shadow-[0_25px_50px_-12px_rgba(99,102,241,0.5)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-50 animate-bounce">
-        <i className="fas fa-robot text-3xl"></i>
-      </button>
+      {/* Floating AI Trigger for Mobile */}
+      {view === 'learning' && (
+        <button 
+          onClick={() => setIsMobileAIDrawerOpen(true)}
+          className="xl:hidden fixed bottom-10 right-10 w-20 h-20 bg-indigo-600 text-white rounded-full shadow-[0_25px_50px_-12px_rgba(99,102,241,0.5)] flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-50 animate-bounce"
+        >
+          <i className="fas fa-robot text-3xl"></i>
+        </button>
+      )}
     </div>
   );
 };
